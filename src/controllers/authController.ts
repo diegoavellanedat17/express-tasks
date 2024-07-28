@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { createUser, findUserByEmail, User } from '../models';
+import { User } from '../models';
+import { createUser, findUserByEmail } from '../repositories';
 
 export const register = async (req: Request, res: Response) => {
   const { username, email, password } = req.body;
@@ -22,7 +23,6 @@ export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   try {
     const user: User = await findUserByEmail(email);
-    console.log('the user is', user);
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -48,7 +48,6 @@ export const login = async (req: Request, res: Response) => {
 
 export const getUser = (req: Request, res: Response) => {
   try {
-    console.log('entra aca con', req);
     const user = (req as any).user as User;
     const { username, email } = user;
     res.json({ username, email });

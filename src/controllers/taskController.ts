@@ -1,7 +1,13 @@
 import { Request, Response } from 'express';
-import { getDBConnection } from '../utils/db';
+import { isValidDate } from './utils/isValidDate';
+import {
+  createTaskInDB,
+  updateTaskInDB,
+  deleteTaskInDB,
+  getTaskFromDB,
+  getTasksForUserFromDB,
+} from '../repositories/taskRepository';
 import { Task } from '../models/taskModel';
-import { isValidDate } from './utils';
 
 export const createTask = async (req: Request, res: Response) => {
   try {
@@ -14,19 +20,10 @@ export const createTask = async (req: Request, res: Response) => {
         .json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
     }
 
-    const db = await getDBConnection();
-    const result = await db.run(
-      `INSERT INTO tasks (title, description, due_date, user_id) VALUES (?, ?, ?, ?)`,
-      [title, description, due_date, userId],
-    );
+    const task: Task = { title, description, due_date, user_id: userId };
+    const taskId = await createTaskInDB(task);
 
-    res.status(201).json({
-      id: result.lastID,
-      title,
-      description,
-      due_date,
-      user_id: userId,
-    });
+    res.status(201).json({ id: taskId, ...task });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -38,24 +35,29 @@ export const updateTask = async (req: Request, res: Response) => {
     const { title, description, due_date, completed } = req.body;
     const userId = (req as any).user.id;
 
-    const db = await getDBConnection();
-    const task = await db.get(
-      `SELECT * FROM tasks WHERE id = ? AND user_id = ?`,
-      [id, userId],
-    );
+    const task = await getTaskFromDB(Number(id), userId);
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    await db.run(
-      `UPDATE tasks SET title = ?, description = ?, due_date = ?, completed = ? WHERE id = ? AND user_id = ?`,
-      [title, description, due_date, completed, id, userId],
-    );
+    if (due_date && !isValidDate(due_date)) {
+      return res
+        .status(400)
+        .json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
+    }
 
-    res
-      .status(200)
-      .json({ id, title, description, due_date, completed, user_id: userId });
+    const updatedTask: Task = {
+      id: Number(id),
+      title,
+      description,
+      due_date,
+      completed,
+      user_id: userId,
+    };
+    await updateTaskInDB(updatedTask);
+
+    res.status(200).json(updatedTask);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -66,20 +68,13 @@ export const deleteTask = async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = (req as any).user.id;
 
-    const db = await getDBConnection();
-    const task = await db.get(
-      `SELECT * FROM tasks WHERE id = ? AND user_id = ?`,
-      [id, userId],
-    );
+    const task = await getTaskFromDB(Number(id), userId);
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    await db.run(`DELETE FROM tasks WHERE id = ? AND user_id = ?`, [
-      id,
-      userId,
-    ]);
+    await deleteTaskInDB(Number(id), userId);
 
     res.status(204).end();
   } catch (error) {
@@ -90,12 +85,7 @@ export const deleteTask = async (req: Request, res: Response) => {
 export const getTasksForUser = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-
-    const db = await getDBConnection();
-    const tasks = await db.all(`SELECT * FROM tasks WHERE user_id = ?`, [
-      userId,
-    ]);
-
+    const tasks = await getTasksForUserFromDB(userId);
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

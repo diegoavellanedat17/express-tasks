@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { findUserByEmail } from '../models/userModel';
+import { findUserByEmail } from '../repositories';
 
 interface JwtPayload {
   userEmail: string;
@@ -12,7 +12,6 @@ export const authMiddleware = async (
   next: NextFunction,
 ) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
-  console.log('token', token);
   if (!token) {
     return res.status(401).json({ message: 'No token, authorization denied' });
   }
