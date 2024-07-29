@@ -40,5 +40,5 @@ jobs:
           fi
 
           # Run new Docker container
-          sudo docker run -d -p 6000:6000 express-tasks
+          sudo docker run -d -p 8000:8000 express-tasks
           EOF

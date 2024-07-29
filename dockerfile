@@ -23,7 +23,7 @@ RUN chmod +x init_db.sh
 RUN ./init_db.sh
 
 # Expose the port the app runs on
-EXPOSE 6000
+EXPOSE 8000
 
 # Start the application
 CMD ["npm", "run", "start"]
