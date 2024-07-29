@@ -1,22 +1,29 @@
-# Use an official Node.js runtime as a parent image
+# Use the official Node.js image
 FROM node:18
 
-# Set the working directory to /app
+# Install SQLite3
+RUN apt-get update && apt-get install -y sqlite3
+
+# Set working directory
 WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install any needed packages
+# Install dependencies
 RUN npm install
 
+# Copy the rest of the application code
 COPY . .
 
-# Expose port 6000
-EXPOSE 6000
-
+# Make the initialization script executable
 RUN chmod +x init_db.sh
+
+# Run the script to initialize the database
 RUN ./init_db.sh
 
-# Run the app
-CMD ["npm", "start"]
+# Expose the port the app runs on
+EXPOSE 6000
+
+# Start the application
+CMD ["node", "index.js"]
