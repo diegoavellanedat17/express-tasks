@@ -26,4 +26,4 @@ RUN ./init_db.sh
 EXPOSE 6000
 
 # Start the application
-CMD ["node", "index.js"]
+CMD ["npm", "run", "start"]
