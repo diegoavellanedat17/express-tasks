@@ -33,9 +33,11 @@ jobs:
           # Build Docker image
           sudo docker build -t express-tasks .
 
-          # Stop and remove all Docker containers
-          sudo docker stop $(sudo docker ps -aq) || true
-          sudo docker rm $(sudo docker ps -aq) || true
+          # Stop and remove existing Docker container, if any
+          if [ "$(sudo docker ps -q)" ]; then
+            sudo docker stop $(sudo docker ps -q)
+            sudo docker rm $(sudo docker ps -aq)
+          fi
 
           # Run new Docker container
           sudo docker run -d -p 6000:6000 express-tasks
